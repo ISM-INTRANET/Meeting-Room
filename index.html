@@ -1,0 +1,259 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta http-equiv="refresh" content="3600">
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>ISM Countdowns</title>
+<style>
+  :root { --card: rgba(0,0,0,0.35); --chip: rgba(255,255,255,0.18); --fg:#eaf3f7; }
+
+  /* BACKGROUND: show image exactly, no effects */
+  html, body { height:100%; margin:0; font-family: Segoe UI, Inter, Arial, sans-serif; color:var(--fg); }
+  body {
+    background: url("background.png") left center / cover no-repeat fixed;
+    overflow: hidden;
+  }
+
+  /* LAYOUT */
+  .wrap {
+    height:100%; width:100%;
+    display:grid;
+    grid-template-columns: 1fr min(58vw, 1080px); /* left = artwork, right = cards */
+    align-items:center;
+    gap: min(2vw, 28px);
+    padding: min(3vw, 36px);
+    box-sizing:border-box;
+  }
+
+  /* PANEL (your frame) */
+  .panel {
+    background: rgba(46, 67, 76, 0.55);
+    border: 0px solid rgba(255,255,255,0.12);
+    border-radius: 16px;
+    padding: min(2vw, 22px);
+    box-shadow: 0 10px 28px rgba(0,0,0,0.24);
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+    margin-left: -68px;
+    margin-top: 104px;
+    height: auto;
+  }
+
+  /* QR Code section - inside right column */
+  .qr-section {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 12px;
+    background: rgba(0,0,0,0.2);
+    border-radius: 10px;
+    margin-top: 10px;
+    align-items: center;
+  }
+
+  .qr-header {
+    font-size: clamp(13px, 1.1vw, 12px);
+    font-weight: bold;
+    color: #eaf3f7;
+    text-align: center;
+    margin-bottom: 5px;
+  }
+
+  .qr-code {
+    width: 130px;
+    height: auto;
+    border-radius: 6px;
+  }
+
+  .qr-footer {
+    font-size: clamp(9px, 1vw, 11px);
+    color: #eaf3f7;
+    text-align: center;
+    margin-top: 5px;
+  }
+
+  .qr-footer a {
+    color: #eaf3f7;
+    text-decoration: none;
+  }
+
+  .qr-footer a:hover {
+    text-decoration: underline;
+  }
+
+  .head{
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 8px;
+    font-weight: 800;
+    font-size: clamp(10px, 1.4vw, 14px);
+    color: #fff;
+    text-shadow: 0 2px 10px rgba(0,0,0,0.55);
+    margin: 0 0 2px 0;
+  }
+
+  /* TWO EXPLICIT COLUMNS (no auto-flow surprises) */
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:10px; }
+  .col{ display:flex; flex-direction:column; gap:10px; }
+
+  /* COUNTDOWN CARD — compact */
+  .card{
+    background: var(--card);
+    border-radius: 10px;
+    min-height: 70px;
+    padding: 7px;
+    display:flex; flex-direction:column; justify-content:space-between;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.22);
+  }
+  .title{ text-align:center; font-weight:800; font-size:clamp(12px,1.1vw,12px); color:#fff; }
+  .counter{ display:flex; align-items:center; justify-content:center; }
+  .row{ display:flex; gap:8px; }
+  .unit{
+    background: var(--chip);
+    padding: 5px 7px;
+    border-radius: 8px;
+    min-width: 42px;
+    text-align:center;
+    box-sizing:border-box;
+  }
+  .num{ font-size:clamp(14px,1.8vw,18px); font-weight:800; line-height:1; color:#fff; }
+  .lbl{ font-size:clamp(6px,0.8vw,9px); opacity:.95; color:#eef4f7; }
+  .meta{
+    text-align:center; opacity:.95; color:#eaf3f7;
+    font-size:clamp(9px,0.8vw,9px);
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+  }
+  .done{ color:#b3ffb3; font-weight:800; font-size:clamp(12px,1.4vw,18px); }
+
+  /* Optional: tighten on smaller widths */
+  @media (max-width: 1100px) {
+    .wrap { grid-template-columns: 1fr; }
+    .panel { margin-left: 0; margin-top: 12px; }
+    .grid2 { grid-template-columns: 1fr; }
+    body { overflow:auto; }
+  }
+</style>
+</head>
+<body>
+  <div class="wrap">
+    <div><!-- left side = background only --></div>
+
+    <section class="panel">
+      <div class="head">
+        <div>Key Meetings Countdown:</div>
+        <div>Internal Meetings Countdown:</div>
+      </div>
+
+      <!-- Two explicit columns -->
+      <div class="grid2">
+        <div id="col-left" class="col"></div>
+        <div id="col-right" class="col">
+          <!-- Internal meetings will be inserted here by JavaScript -->
+          <!-- QR Code will be added after the last meeting -->
+        </div>
+      </div>
+    </section>
+  </div>
+
+<script>
+/* ===== MEETINGS ===== */
+/* Left column: Key Meetings (includes Quotation Committee + Monthly Business Review) */
+const keyMeetings = [
+  { title:"ISDAC",
+    when:"2025-11-11T14:00:00+08:00",
+    where:"Bilik Mesyuarat TMKE (F), Level 17 MOFE • Tuesday, 11 November 2025" },
+
+  { title:"Tender Committee",
+    when:"2025-10-15T10:30:00+08:00",
+    where:"Bilik Mesyuarat TMKE (F), Level 17 MOFE • Wednesday, 15 October 2025" },
+
+  { title:"Quotation Committee",
+    when:"2025-08-25T10:30:00+08:00",
+    where:"ISM Meeting Room, Level 2, D&T • Monday, 25 August 2025" },
+
+  { title:"Monthly Business Review",
+    when:"2025-10-14T08:30:00+08:00",
+    where:"ISM Meeting Room, Level 2, D&T • Tuesday, 14 October 2025" }
+];
+
+/* Right column: Internal Meetings */
+const internalMeetings = [
+  { title:"Core Alignment Meeting",
+    when:"2025-11-03T14:00:00+08:00",
+    where:"ISM Meeting Room, Level 2, D&T • Monday, 3 November 2025" },
+
+  { title:"Growth Alignment Meeting",
+    when:"2025-10-20T14:00:00+08:00",
+    where:"ISM Meeting Room, Level 2, D&T • Monday, 20 October 2025" }
+];
+
+/* ===== RENDER + TICK ===== */
+const colLeft  = document.getElementById('col-left');
+const colRight = document.getElementById('col-right');
+const z = n => String(n).padStart(2,"0");
+
+function makeCard(ev){
+  const card = document.createElement('article');
+  card.className = 'card';
+  card.dataset.when = ev.when;
+  card.innerHTML = `
+    <div class="title">${ev.title || ''}</div>
+    <div class="counter"></div>
+    <div class="meta">${ev.where || ''}</div>
+  `;
+  return card;
+}
+
+// Add key meetings to left column
+keyMeetings.forEach(e => colLeft.appendChild(makeCard(e)));
+
+// Add internal meetings to right column
+internalMeetings.forEach(e => colRight.appendChild(makeCard(e)));
+
+// Add QR code to right column after the meetings
+const qrSection = document.createElement('div');
+qrSection.className = 'qr-section';
+qrSection.innerHTML = `
+
+  <div class="qr-header">Digital Attendance Submission Form</div>
+<div class="qr-header">(ISM Meeting Room)</div>
+
+  <img class="qr-code" src="QR.png" alt="QR Code">
+
+  <div class="qr-footer">bit.ly/MeetingISM
+
+  </div>
+`;
+colRight.appendChild(qrSection);
+
+function renderCard(card){
+  const when = new Date(card.dataset.when);
+  const now  = new Date();
+  const diff = when - now;
+  const ctr  = card.querySelector('.counter');
+
+  if (isNaN(when)) { ctr.textContent = "Invalid date"; return; }
+  if (diff <= 0) { ctr.innerHTML = `<div class="done">To Be Announced</div>`; return; }
+
+  const s = Math.floor(diff/1000);
+  const d = Math.floor(s/86400);
+  const h = Math.floor((s%86400)/3600);
+  const m = Math.floor((s%3600)/60);
+  const sec = s%60;
+
+  ctr.innerHTML = `
+    <div class="row">
+      <div class="unit"><div class="num">${z(d)}</div><div class="lbl">days</div></div>
+      <div class="unit"><div class="num">${z(h)}</div><div class="lbl">hrs</div></div>
+      <div class="unit"><div class="num">${z(m)}</div><div class="lbl">min</div></div>
+      <div class="unit"><div class="num">${z(sec)}</div><div class="lbl">sec</div></div>
+    </div>`;
+}
+
+function tick(){ document.querySelectorAll('.card').forEach(renderCard); }
+tick(); setInterval(tick, 1000);
+</script>
+</body>
+</html>
